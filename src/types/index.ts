@@ -46,3 +46,9 @@ export type RIssue = Issue & {
 //   iat: number;
 //   exp: number;
 // }
+
+export interface IQuery {
+  sort?: "newest" | "oldest";
+  type?: "bug" | "feature_request";
+  status?: "open" | "in_progress" | "resolved";
+}

@@ -27,7 +27,14 @@ const createIssue = async (req: Request, res: Response) => {
 };
 
 const getAllIssue = async (req: Request, res: Response) => {
-  const result = await issuesService.getAllIssue();
+  const result = await issuesService.getAllIssue(req.query);
+  sendResponse(
+    res,
+    {
+      data: result,
+    },
+    200,
+  );
 };
 
 export { createIssue, getAllIssue };
