@@ -5,7 +5,7 @@ import authService from "./auth.service";
 
 const signUpUser = async (req: Request, res: Response) => {
   const result = await authService.saveUserIntoDb(req.body);
-  sendResponse(
+  return sendResponse(
     res,
     {
       message: "User registered successfully",
@@ -20,7 +20,7 @@ const signInUser = async (req: Request, res: Response) => {
   const token = await JwtService.signToken(result.id);
 
   // send response with token
-  sendResponse(
+  return sendResponse(
     res,
     { message: "Login successful", data: { token, result } },
     200,

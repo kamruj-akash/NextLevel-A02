@@ -6,7 +6,7 @@ const createIssue = async (req: Request, res: Response) => {
   const payload = { reporter_id: req.user.id, ...req.body };
 
   const result = await issuesService.createIssue(payload);
-  sendResponse(
+  return sendResponse(
     res,
     {
       message: "Issue created successfully",
@@ -18,7 +18,7 @@ const createIssue = async (req: Request, res: Response) => {
 
 const getAllIssue = async (req: Request, res: Response) => {
   const result = await issuesService.getAllIssue(req.query);
-  sendResponse(
+  return sendResponse(
     res,
     {
       data: result,
@@ -29,7 +29,7 @@ const getAllIssue = async (req: Request, res: Response) => {
 
 const getSingleIssue = async (req: Request, res: Response) => {
   const result = await issuesService.getSingleIssue(Number(req.params.id));
-  sendResponse(res, { data: result }, 200);
+  return sendResponse(res, { data: result }, 200);
 };
 
 const updateIssue = async (req: Request, res: Response) => {
@@ -38,15 +38,16 @@ const updateIssue = async (req: Request, res: Response) => {
     req.body,
     req.user,
   );
-  sendResponse(res, { data: result }, 200);
+  return sendResponse(res, { data: result }, 200);
 };
 
 const deleteIssue = async (req: Request, res: Response) => {
+  console.log("checked");
   const result = await issuesService.deleteIssue(Number(req.params.id));
   if (!result) {
     return sendResponse(res, { message: "Issue not found", error: true }, 404);
   }
-  sendResponse(res, { message: "Issue deleted successfully" }, 200);
+  return sendResponse(res, { message: "Issue deleted successfully" }, 200);
 };
 
 export { createIssue, deleteIssue, getAllIssue, getSingleIssue, updateIssue };

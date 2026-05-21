@@ -8,7 +8,7 @@ const auth = (...roles: Role[]) => {
     try {
       const token = req.headers.authorization as string;
       if (!token) {
-        sendResponse(
+        return sendResponse(
           res,
           {
             message: "Unauthorized",
@@ -20,7 +20,7 @@ const auth = (...roles: Role[]) => {
 
       const verifyToken = await JwtService.verifyToken(token);
       if (!roles.includes(verifyToken.role)) {
-        sendResponse(
+        return sendResponse(
           res,
           {
             message: "Unauthorized",
