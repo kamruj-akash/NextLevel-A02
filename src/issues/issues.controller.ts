@@ -4,26 +4,16 @@ import issuesService from "./issues.service";
 
 const createIssue = async (req: Request, res: Response) => {
   const payload = { reporter_id: req.user.id, ...req.body };
-  try {
-    const result = await issuesService.createIssue(payload);
-    sendResponse(
-      res,
-      {
-        message: "Issue created successfully",
-        data: result,
-      },
-      200,
-    );
-  } catch (error) {
-    sendResponse(
-      res,
-      {
-        message: "Issue creation failed",
-        error: true,
-      },
-      500,
-    );
-  }
+
+  const result = await issuesService.createIssue(payload);
+  sendResponse(
+    res,
+    {
+      message: "Issue created successfully",
+      data: result,
+    },
+    200,
+  );
 };
 
 const getAllIssue = async (req: Request, res: Response) => {
@@ -52,26 +42,11 @@ const updateIssue = async (req: Request, res: Response) => {
 };
 
 const deleteIssue = async (req: Request, res: Response) => {
-  try {
-    const result = await issuesService.deleteIssue(Number(req.params.id));
-    if (!result) {
-      return sendResponse(
-        res,
-        { message: "Issue not found", error: true },
-        404,
-      );
-    }
-    sendResponse(res, { message: "Issue deleted successfully" }, 200);
-  } catch (error) {
-    sendResponse(
-      res,
-      {
-        message: "Issue deletion failed",
-        error: true,
-      },
-      500,
-    );
+  const result = await issuesService.deleteIssue(Number(req.params.id));
+  if (!result) {
+    return sendResponse(res, { message: "Issue not found", error: true }, 404);
   }
+  sendResponse(res, { message: "Issue deleted successfully" }, 200);
 };
 
 export { createIssue, deleteIssue, getAllIssue, getSingleIssue, updateIssue };

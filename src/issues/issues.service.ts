@@ -1,6 +1,7 @@
 import type { JwtPayload } from "jsonwebtoken";
 import { sql } from "../db";
 import {
+  BUG_TYPES,
   type IQuery,
   type Issue,
   type Reporter,
@@ -13,6 +14,17 @@ class IssueService {
   // create issue
   async createIssue(payload: Issue & { reporter_id: number }): Promise<Issue> {
     const { title, description, type, reporter_id } = payload;
+    if (!title || !description || !type || !reporter_id) {
+      throw new AppError("All fields are required", 400);
+    }
+    if (!BUG_TYPES.includes(type)) {
+      console.log(!BUG_TYPES.includes(type));
+      throw new AppError(
+        "only 'byg' or 'feature_request' types are allowed",
+        400,
+      );
+    }
+
     const result = await sql`
         INSERT INTO issues (title, description, type, reporter_id)
         VALUES (${title}, ${description}, ${type}, ${reporter_id})

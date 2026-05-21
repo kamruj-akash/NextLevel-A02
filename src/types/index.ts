@@ -1,6 +1,12 @@
 export const roles = ["contributor", "maintainer"] as const;
 export type Role = (typeof roles)[number];
 
+export const STATUSES = ["open", "in_progress", "resolved"] as const;
+export type Status = (typeof STATUSES)[number];
+
+export const BUG_TYPES = ["bug", "feature_request"] as const;
+export type BugType = (typeof BUG_TYPES)[number];
+
 export type User = {
   name: string;
   email: string;
@@ -24,8 +30,8 @@ export type Reporter = {
 export type Issue = {
   title: string;
   description: string;
-  type: string;
-  status?: string;
+  type: BugType;
+  status?: Status;
 };
 
 export type RIssue = Issue & {
