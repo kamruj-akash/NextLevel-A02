@@ -1,7 +1,16 @@
+import type { JwtPayload } from "jsonwebtoken";
 import { sql } from "../db";
-import type { IQuery, Issue, RIssue } from "../types";
+import {
+  type IQuery,
+  type Issue,
+  type Reporter,
+  type RIssue,
+  type RRIssue,
+} from "../types";
+import AppError from "../utils/AppError";
 
 class IssueService {
+  // create issue
   async createIssue(payload: Issue & { reporter_id: number }): Promise<Issue> {
     const { title, description, type, reporter_id } = payload;
     const result = await sql`
@@ -12,7 +21,7 @@ class IssueService {
 
     return result[0] as Issue;
   }
-
+  // get all issues
   async getAllIssue(query: IQuery): Promise<RIssue[]> {
     const { sort, type, status } = query;
     const sortDirection =
@@ -46,6 +55,72 @@ class IssueService {
     });
 
     return issues as RIssue[];
+  }
+
+  // get single issue
+  async getSingleIssue(id: number): Promise<RIssue> {
+    const issueRows = (await sql`
+    SELECT *
+    FROM issues
+    WHERE id = ${id};
+  `) as RRIssue[];
+
+    if (issueRows.length === 0) {
+      throw new AppError(`Issue with id ${id} not found`, 404);
+    }
+
+    const issue = issueRows[0]!;
+    const reporterRows = (await sql`
+    SELECT id, name, role
+    FROM users
+    WHERE id = ${issue.reporter_id};
+  `) as Reporter[];
+
+    if (reporterRows.length === 0) {
+      throw new Error(`Reporter with id ${issue.reporter_id} not found`);
+    }
+
+    const reporter = reporterRows[0]!;
+
+    const { reporter_id, ...rest } = issue;
+
+    return {
+      ...rest,
+      reporter,
+    } as RIssue;
+  }
+
+  // update issue
+  async updateIssue(id: number, payload: Issue, user: JwtPayload) {
+    const { title, description, type } = payload;
+
+    if (user.role !== "maintainer") {
+      const issueFromDb = await this.getSingleIssue(id);
+      if (issueFromDb.status !== "open") {
+        throw new AppError("Only open issues can be updated!", 403);
+      }
+
+      if (issueFromDb.reporter.id !== user.id) {
+        throw new AppError("You are not authorized to update this issue", 403);
+      }
+      const result = await sql`
+        UPDATE issues
+        SET title = ${title}, description = ${description}, type = ${type}
+        WHERE id = ${id}
+        RETURNING *
+      `;
+      return result[0] as Issue;
+    }
+
+    const result = await sql`
+      UPDATE issues
+      SET title = ${title}, description = ${description}, type = ${type}
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    return result[0] as Issue;
+
+    // return result[0] as Issue;
   }
 }
 

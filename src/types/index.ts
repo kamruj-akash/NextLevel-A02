@@ -35,6 +35,10 @@ export type RIssue = Issue & {
   updated_at: string;
 };
 
+export type RRIssue = Omit<RIssue, "reporter"> & {
+  reporter_id: number;
+};
+
 // issues interface
 // export interface IJwtPayload {
 //   id: number;
