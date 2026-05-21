@@ -1,7 +1,8 @@
 import type { JwtPayload } from "jsonwebtoken";
-import { sql } from "../db";
+import { pool } from "../db";
 import {
   BUG_TYPES,
+  STATUSES,
   type IQuery,
   type Issue,
   type Reporter,
@@ -25,36 +26,60 @@ class IssueService {
       );
     }
 
-    const result = await sql`
+    const result = await pool.query(
+      `
         INSERT INTO issues (title, description, type, reporter_id)
-        VALUES (${title}, ${description}, ${type}, ${reporter_id})
+        VALUES ($1, $2, $3, $4)
         RETURNING *
-    `;
+    `,
+      [title, description, type, reporter_id],
+    );
 
-    return result[0] as Issue;
+    return result.rows[0] as Issue;
   }
   // get all issues
   async getAllIssue(query: IQuery): Promise<RIssue[]> {
     const { sort, type, status } = query;
-    const sortDirection =
-      sort?.toLowerCase() === "oldest" ? sql`ASC` : sql`DESC`;
-    const issues = await sql`
+    const sortDirection = sort?.toLowerCase() === "oldest" ? "ASC" : "DESC";
+
+    const conditions: string[] = [];
+    const values: unknown[] = [];
+
+    if (status) {
+      values.push(status);
+      conditions.push(`status = $${values.length}`);
+    }
+    if (type) {
+      values.push(type);
+      conditions.push(`type = $${values.length}`);
+    }
+
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const issuesResult = await pool.query(
+      `
     SELECT *
     FROM issues
-    WHERE 1=1
-      ${status ? sql`AND status = ${status}` : sql``}
-      ${type ? sql`AND type = ${type}` : sql``}
+    ${whereClause}
     ORDER BY created_at ${sortDirection}
-  `;
+  `,
+      values,
+    );
+    const issues = issuesResult.rows;
     if (issues.length === 0) return [];
 
     const reporterIds = [...new Set(issues.map((issue) => issue.reporter_id))];
 
-    const reporters = await sql`
+    const reportersResult = await pool.query(
+      `
                           SELECT id, name, role
                           FROM users
-                          WHERE id = ANY(${reporterIds})
-                          `;
+                          WHERE id = ANY($1)
+      `,
+      [reporterIds],
+    );
+    const reporters = reportersResult.rows;
 
     issues.forEach((issue) => {
       const reporter = reporters.find((r) => r.id === issue.reporter_id);
@@ -72,22 +97,32 @@ class IssueService {
 
   // get single issue
   async getSingleIssue(id: number): Promise<RIssue> {
-    const issueRows = (await sql`
+    const issueRows = (
+      await pool.query(
+        `
     SELECT *
     FROM issues
-    WHERE id = ${id};
-  `) as RRIssue[];
+    WHERE id = $1;
+  `,
+        [id],
+      )
+    ).rows as RRIssue[];
 
     if (issueRows.length === 0) {
       throw new AppError(`Issue with id ${id} not found`, 404);
     }
 
     const issue = issueRows[0]!;
-    const reporterRows = (await sql`
+    const reporterRows = (
+      await pool.query(
+        `
     SELECT id, name, role
     FROM users
-    WHERE id = ${issue.reporter_id};
-  `) as Reporter[];
+    WHERE id = $1;
+  `,
+        [issue.reporter_id],
+      )
+    ).rows as Reporter[];
 
     if (reporterRows.length === 0) {
       throw new Error(`Reporter with id ${issue.reporter_id} not found`);
@@ -107,7 +142,28 @@ class IssueService {
   async updateIssue(id: number, payload: Issue, user: JwtPayload) {
     const { title, description, type, status } = payload;
 
+    if (!title && !description && !type && !status) {
+      throw new AppError("At least one field is required", 400);
+    }
+    if (type && !BUG_TYPES.includes(type)) {
+      console.log(!BUG_TYPES.includes(type));
+      throw new AppError(
+        "only 'bug' or 'feature_request' types are allowed",
+        400,
+      );
+    }
+
+    if (status && !STATUSES.includes(status)) {
+      throw new AppError(
+        "only 'open', 'in_progress' or 'resolved' statuses are allowed",
+        400,
+      );
+    }
+
     if (user.role !== "maintainer") {
+      if (status) {
+        throw new AppError("Only maintainers can update status", 403);
+      }
       const issueFromDb = await this.getSingleIssue(id);
       if (issueFromDb.status !== "open") {
         throw new AppError("Only open issues can be updated!", 403);
@@ -116,41 +172,50 @@ class IssueService {
       if (issueFromDb.reporter.id !== user.id) {
         throw new AppError("You are not authorized to update this issue", 403);
       }
-      const result = await sql`
+      const result = await pool.query(
+        `
                         UPDATE issues
-                        SET 
-                          title = COALESCE(${title ?? null}, title),
-                          description = COALESCE(${description ?? null}, description),
-                          type = COALESCE(${type ?? null}, type),
+                        SET
+                          title = COALESCE($1, title),
+                          description = COALESCE($2, description),
+                          type = COALESCE($3, type),
                           updated_at = NOW()
-                        WHERE id = ${id}
+                        WHERE id = $4
                         RETURNING *
-                      `;
-      return result[0] as Issue;
+                      `,
+        [title ?? null, description ?? null, type ?? null, id],
+      );
+      return result.rows[0] as Issue;
     }
 
-    const result = await sql`
+    const result = await pool.query(
+      `
                         UPDATE issues
-                        SET 
-                          title = COALESCE(${title ?? null}, title),
-                          description = COALESCE(${description ?? null}, description),
-                          type = COALESCE(${type ?? null}, type),
-                          status = COALESCE(${status ?? null}, status),
+                        SET
+                          title = COALESCE($1, title),
+                          description = COALESCE($2, description),
+                          type = COALESCE($3, type),
+                          status = COALESCE($4, status),
                           updated_at = NOW()
-                        WHERE id = ${id}
+                        WHERE id = $5
                         RETURNING *
-                      `;
-    return result[0] as Issue;
+                      `,
+      [title ?? null, description ?? null, type ?? null, status ?? null, id],
+    );
+    return result.rows[0] as Issue;
   }
 
   // delete issue
   async deleteIssue(id: number) {
-    const result = await sql`
+    const result = await pool.query(
+      `
                         DELETE FROM issues
-                        WHERE id = ${id}
+                        WHERE id = $1
                         RETURNING *
-                      `;
-    return result[0] as Issue;
+                      `,
+      [id],
+    );
+    return result.rows[0] as Issue;
   }
 }
 

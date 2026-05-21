@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { sql } from "../db";
+import { pool } from "../db";
 import { roles, type Role, type RUser, type User } from "../types";
 import AppError from "../utils/AppError";
 
@@ -24,40 +24,46 @@ class AuthService {
       throw new Error("Invalid role");
     }
 
-    const result = await sql`
+    const result = await pool.query(
+      `
         INSERT INTO users (name, email, password, role)
-        VALUES (${name}, ${email}, ${password}, ${userRole})
+        VALUES ($1, $2, $3, $4)
         RETURNING id, name, email, role, created_at, updated_at
-    `;
-    return result[0] as RUser;
+    `,
+      [name, email, password, userRole],
+    );
+    return result.rows[0] as RUser;
   }
 
   // login user
   async loginUserFromDb(payload: Omit<User, "name" | "role">): Promise<RUser> {
     const { email, password } = payload;
 
-    const userInfo = await sql`
+    const userInfo = await pool.query(
+      `
             SELECT *
-            FROM users 
-            WHERE email = ${email};
-        `;
-    if (!userInfo[0]) {
+            FROM users
+            WHERE email = $1;
+        `,
+      [email],
+    );
+    if (!userInfo.rows[0]) {
       throw new AppError("User not found", 404);
     }
 
     const isMatchPass = await this.comparePassword(
       password,
-      userInfo[0].password,
+      userInfo.rows[0].password,
     );
 
-    delete userInfo[0].password;
+    delete userInfo.rows[0].password;
 
     if (!isMatchPass) {
       throw new AppError("Invalid credentials", 401);
     }
 
     // return user info
-    return userInfo[0] as RUser;
+    return userInfo.rows[0] as RUser;
   }
 }
 

@@ -1,6 +1,6 @@
 import jwt, { type JwtPayload, type SignOptions } from "jsonwebtoken";
 import { config } from "../config";
-import { sql } from "../db";
+import { pool } from "../db";
 import AppError from "./AppError";
 
 class JwtService {
@@ -9,21 +9,24 @@ class JwtService {
     const secret = config.JWT_SECRET;
     if (!secret) throw new AppError("JWT secret not found", 500);
 
-    const userInfo = await sql`
+    const userInfo = await pool.query(
+      `
           SELECT *
-          FROM users 
-          WHERE id = ${id};
-      `;
+          FROM users
+          WHERE id = $1;
+      `,
+      [id],
+    );
 
-    if (!userInfo[0]) {
+    if (!userInfo.rows[0]) {
       throw new AppError("User not found", 404);
     }
 
     const token = jwt.sign(
       {
-        id: userInfo[0].id,
-        name: userInfo[0].name,
-        role: userInfo[0].role,
+        id: userInfo.rows[0].id,
+        name: userInfo.rows[0].name,
+        role: userInfo.rows[0].role,
       },
       secret,
       {
@@ -40,12 +43,15 @@ class JwtService {
 
     try {
       const decoded = jwt.verify(token, secret) as JwtPayload;
-      const userInfo = await sql`
+      const userInfo = await pool.query(
+        `
                                 SELECT *
-                                FROM users 
-                                WHERE id = ${decoded.id};
-                              `;
-      if (!userInfo[0]) {
+                                FROM users
+                                WHERE id = $1;
+                              `,
+        [decoded.id],
+      );
+      if (!userInfo.rows[0]) {
         throw new AppError("User not found", 404);
       }
 
