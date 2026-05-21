@@ -129,6 +129,16 @@ class IssueService {
                       `;
     return result[0] as Issue;
   }
+
+  // delete issue
+  async deleteIssue(id: number) {
+    const result = await sql`
+                        DELETE FROM issues
+                        WHERE id = ${id}
+                        RETURNING *
+                      `;
+    return result[0] as Issue;
+  }
 }
 
 export default new IssueService();

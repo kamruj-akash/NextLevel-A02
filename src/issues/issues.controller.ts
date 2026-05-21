@@ -51,4 +51,27 @@ const updateIssue = async (req: Request, res: Response) => {
   sendResponse(res, { data: result }, 200);
 };
 
-export { createIssue, getAllIssue, getSingleIssue, updateIssue };
+const deleteIssue = async (req: Request, res: Response) => {
+  try {
+    const result = await issuesService.deleteIssue(Number(req.params.id));
+    if (!result) {
+      return sendResponse(
+        res,
+        { message: "Issue not found", error: true },
+        404,
+      );
+    }
+    sendResponse(res, { message: "Issue deleted successfully" }, 200);
+  } catch (error) {
+    sendResponse(
+      res,
+      {
+        message: "Issue deletion failed",
+        error: true,
+      },
+      500,
+    );
+  }
+};
+
+export { createIssue, deleteIssue, getAllIssue, getSingleIssue, updateIssue };
