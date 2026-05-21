@@ -49,6 +49,7 @@ class IssueService {
     if (issues.length === 0) return [];
 
     const reporterIds = [...new Set(issues.map((issue) => issue.reporter_id))];
+
     const reporters = await sql`
                           SELECT id, name, role
                           FROM users

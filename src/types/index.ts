@@ -36,7 +36,6 @@ export type Issue = {
 
 export type RIssue = Issue & {
   id: number;
-  status: string;
   reporter: Reporter;
   created_at: string;
   updated_at: string;
