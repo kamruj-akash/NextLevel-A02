@@ -92,7 +92,7 @@ class IssueService {
 
   // update issue
   async updateIssue(id: number, payload: Issue, user: JwtPayload) {
-    const { title, description, type } = payload;
+    const { title, description, type, status } = payload;
 
     if (user.role !== "maintainer") {
       const issueFromDb = await this.getSingleIssue(id);
@@ -104,23 +104,30 @@ class IssueService {
         throw new AppError("You are not authorized to update this issue", 403);
       }
       const result = await sql`
-        UPDATE issues
-        SET title = ${title}, description = ${description}, type = ${type}
-        WHERE id = ${id}
-        RETURNING *
-      `;
+                        UPDATE issues
+                        SET 
+                          title = COALESCE(${title ?? null}, title),
+                          description = COALESCE(${description ?? null}, description),
+                          type = COALESCE(${type ?? null}, type),
+                          updated_at = NOW()
+                        WHERE id = ${id}
+                        RETURNING *
+                      `;
       return result[0] as Issue;
     }
 
     const result = await sql`
-      UPDATE issues
-      SET title = ${title}, description = ${description}, type = ${type}
-      WHERE id = ${id}
-      RETURNING *
-    `;
+                        UPDATE issues
+                        SET 
+                          title = COALESCE(${title ?? null}, title),
+                          description = COALESCE(${description ?? null}, description),
+                          type = COALESCE(${type ?? null}, type),
+                          status = COALESCE(${status ?? null}, status),
+                          updated_at = NOW()
+                        WHERE id = ${id}
+                        RETURNING *
+                      `;
     return result[0] as Issue;
-
-    // return result[0] as Issue;
   }
 }
 
