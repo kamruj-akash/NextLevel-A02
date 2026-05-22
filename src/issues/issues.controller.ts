@@ -3,16 +3,17 @@ import { sendResponse } from "../utils/sendResponse";
 import issuesService from "./issues.service";
 
 const createIssue = async (req: Request, res: Response) => {
-  const payload = { reporter_id: req.user.id, ...req.body };
-
-  const result = await issuesService.createIssue(payload);
+  const result = await issuesService.createIssue({
+    ...req.body,
+    reporter_id: req.user.id,
+  });
   return sendResponse(
     res,
     {
       message: "Issue created successfully",
       data: result,
     },
-    200,
+    201,
   );
 };
 
@@ -38,7 +39,11 @@ const updateIssue = async (req: Request, res: Response) => {
     req.body,
     req.user,
   );
-  return sendResponse(res, { data: result }, 200);
+  return sendResponse(
+    res,
+    { message: "Issue updated successfully", data: result },
+    200,
+  );
 };
 
 const deleteIssue = async (req: Request, res: Response) => {

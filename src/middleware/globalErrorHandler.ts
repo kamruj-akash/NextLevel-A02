@@ -16,7 +16,7 @@ const globalErrorHandler = async (
     stack:
       config.NODE_ENV === "development" && err instanceof Error
         ? err.stack
-        : undefined,
+        : err,
   });
 };
 

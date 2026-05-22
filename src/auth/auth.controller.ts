@@ -11,18 +11,18 @@ const signUpUser = async (req: Request, res: Response) => {
       message: "User registered successfully",
       data: result as Record<string, any>,
     },
-    200,
+    201,
   );
 };
 
 const signInUser = async (req: Request, res: Response) => {
-  const result = await authService.loginUserFromDb(req.body);
-  const token = await JwtService.signToken(result.id);
+  const user = await authService.loginUserFromDb(req.body);
+  const token = await JwtService.signToken(user.id);
 
   // send response with token
   return sendResponse(
     res,
-    { message: "Login successful", data: { token, result } },
+    { message: "Login successful", data: { token, user } },
     200,
   );
 };

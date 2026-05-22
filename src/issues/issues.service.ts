@@ -21,7 +21,7 @@ class IssueService {
     if (!BUG_TYPES.includes(type)) {
       console.log(!BUG_TYPES.includes(type));
       throw new AppError(
-        "only 'byg' or 'feature_request' types are allowed",
+        `bug type must be one of: ${BUG_TYPES.join(", ")}`,
         400,
       );
     }
@@ -81,13 +81,22 @@ class IssueService {
     );
     const reporters = reportersResult.rows;
 
-    issues.forEach((issue) => {
+    issues.forEach((issue, index) => {
       const reporter = reporters.find((r) => r.id === issue.reporter_id);
       if (reporter) {
-        issue.reporter = {
-          id: reporter.id,
-          name: reporter.name,
-          role: reporter.role,
+        issues[index] = {
+          id: issue.id,
+          title: issue.title,
+          description: issue.description,
+          type: issue.type,
+          status: issue.status,
+          reporter: {
+            id: reporter.id,
+            name: reporter.name,
+            role: reporter.role,
+          },
+          created_at: issue.created_at,
+          updated_at: issue.updated_at,
         };
       }
     });
