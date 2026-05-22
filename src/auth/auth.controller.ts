@@ -9,7 +9,7 @@ const signUpUser = async (req: Request, res: Response) => {
     res,
     {
       message: "User registered successfully",
-      data: result as Record<string, any>,
+      data: result,
     },
     201,
   );
