@@ -42,7 +42,6 @@ const updateIssue = async (req: Request, res: Response) => {
 };
 
 const deleteIssue = async (req: Request, res: Response) => {
-  console.log("checked");
   const result = await issuesService.deleteIssue(Number(req.params.id));
   if (!result) {
     return sendResponse(res, { message: "Issue not found", error: true }, 404);

@@ -159,19 +159,6 @@ class IssueService {
         400,
       );
     }
-    // if (type && !BUG_TYPES.includes(type)) {
-    //   throw new AppError(
-    //     "only 'bug' or 'feature_request' types are allowed",
-    //     400,
-    //   );
-    // }
-
-    // if (status && !STATUSES.includes(status)) {
-    //   throw new AppError(
-    //     "only 'open', 'in_progress' or 'resolved' statuses are allowed",
-    //     400,
-    //   );
-    // }
 
     if (user.role !== "maintainer") {
       if (status) {
