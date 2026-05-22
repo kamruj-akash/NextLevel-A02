@@ -2,10 +2,10 @@ import { Router } from "express";
 import auth from "../middleware/auth.middleware";
 import {
   createIssue,
+  deleteIssue,
   getAllIssue,
   getSingleIssue,
   updateIssue,
-  deleteIssue
 } from "./issues.controller";
 
 const router = Router();

@@ -145,20 +145,33 @@ class IssueService {
     if (!title && !description && !type && !status) {
       throw new AppError("At least one field is required", 400);
     }
-    if (type && !BUG_TYPES.includes(type)) {
-      console.log(!BUG_TYPES.includes(type));
+    if (
+      (type && !BUG_TYPES.includes(type)) ||
+      (status && !STATUSES.includes(status))
+    ) {
       throw new AppError(
-        "only 'bug' or 'feature_request' types are allowed",
+        [
+          type && `bug type must be one of: ${BUG_TYPES.join(", ")}`,
+          status && `status must be one of: ${STATUSES.join(", ")}`,
+        ]
+          .filter(Boolean)
+          .join("; "),
         400,
       );
     }
+    // if (type && !BUG_TYPES.includes(type)) {
+    //   throw new AppError(
+    //     "only 'bug' or 'feature_request' types are allowed",
+    //     400,
+    //   );
+    // }
 
-    if (status && !STATUSES.includes(status)) {
-      throw new AppError(
-        "only 'open', 'in_progress' or 'resolved' statuses are allowed",
-        400,
-      );
-    }
+    // if (status && !STATUSES.includes(status)) {
+    //   throw new AppError(
+    //     "only 'open', 'in_progress' or 'resolved' statuses are allowed",
+    //     400,
+    //   );
+    // }
 
     if (user.role !== "maintainer") {
       if (status) {

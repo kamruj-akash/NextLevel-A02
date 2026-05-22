@@ -11,7 +11,7 @@ const auth = (...roles: Role[]) => {
         return sendResponse(
           res,
           {
-            message: "Unauthorized",
+            message: "Unauthorized Access!",
             error: true,
           },
           401,
@@ -19,17 +19,18 @@ const auth = (...roles: Role[]) => {
       }
 
       const verifyToken = await JwtService.verifyToken(token);
-      if (!roles.includes(verifyToken.role)) {
+      if (!roles.includes(verifyToken.role) || !verifyToken) {
         return sendResponse(
           res,
           {
-            message: "Unauthorized",
+            message: "Unauthorized Access!",
             error: true,
           },
           401,
         );
       }
       req.user = verifyToken;
+
       next();
     } catch (error) {
       next(error);
