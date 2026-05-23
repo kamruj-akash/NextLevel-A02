@@ -8,4 +8,5 @@ export const config = {
   NODE_ENV: env.NODE_ENV as string,
   JWT_SECRET: env.JWT_SECRET as string,
   JWT_EXPIRE: env.JWT_EXPIRE as string,
+  CORS_ORIGIN: env.CORS_ORIGIN as string,
 };
